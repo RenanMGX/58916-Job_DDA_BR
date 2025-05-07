@@ -1,7 +1,8 @@
 from dependencies.sap import SAPManipulation
 from dependencies.config import Config
+from dependencies.logs import Logs
 from dependencies.credenciais import Credential
-from dependencies.functions import Functions
+from dependencies.functions import Functions, P
 from datetime import datetime
 from dateutil.relativedelta import relativedelta
 from time import sleep
@@ -43,7 +44,7 @@ class SAP(SAPManipulation):
         return path
 
     @SAPManipulation.start_SAP
-    def dda_br(self, *, centro:str, date: datetime=datetime.now()) -> None:
+    def dda_br(self, *, centro:str, date) -> bool:
 
         self.session.findById("wnd[0]/tbar[0]/okcd").text = "/n dda_br"
         self.session.findById("wnd[0]").sendVKey(0)
@@ -62,7 +63,18 @@ class SAP(SAPManipulation):
         self.session.findById("wnd[0]/usr/cntlGRID1/shellcont/shell").selectAll()
         self.session.findById("wnd[0]/tbar[1]/btn[7]").press()
         
-        return
+        if (tbar:=self.session.findById("wnd[0]/sbar/pane[0]").text):
+            print(P(tbar))
+            Logs().register(status='Report', description=str(tbar))
+            return True
+        else:
+            print(P("Nenhum DDA alterado."))
+            return False
+        
+    
+    @SAPManipulation.start_SAP
+    def teste(self):
+        print("finalizou")
     
         
 
