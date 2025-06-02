@@ -2,7 +2,7 @@ from Entities.sap import SAP, datetime, relativedelta
 import os
 import pandas as pd
 from Entities.dependencies.arguments import Arguments
-from Entities.dependencies.functions import P
+from Entities.dependencies.functions import P, Functions
 
 class Execute:
     @staticmethod
@@ -17,7 +17,11 @@ class Execute:
         
         print(P(f"Total de empresas encontradas: {len(lista_empresas)}"))
         del df
-        os.unlink(path)
+        try:
+            Functions.fechar_excel(path)
+            os.unlink(path)
+        except:
+            pass
         
         print(P("Iniciando processamento das empresas..."))
         quantidade_empresas = len(lista_empresas)
