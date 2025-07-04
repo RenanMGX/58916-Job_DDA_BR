@@ -1,18 +1,23 @@
-from dependencies.sap import SAPManipulation
-from dependencies.config import Config
-from dependencies.logs import Logs
-from dependencies.credenciais import Credential
-from dependencies.functions import Functions, P
+
+from patrimar_dependencies.sap import SAPManipulation
+from patrimar_dependencies.functions import Functions, P
 from datetime import datetime
 from dateutil.relativedelta import relativedelta
 from time import sleep
 import os
+from botcity.maestro import * #type: ignore
 
 class SAP(SAPManipulation):
-    def __init__(self):
-        crd:dict = Credential(Config()['credenciais']['sap']).load()
-        
-        super().__init__(user=crd['user'], password=crd['password'], ambiente=crd['ambiente'])
+    def __init__(
+        self,
+        *,
+        user:str,
+        password:str,
+        ambiente:str,
+        maestro:BotMaestroSDK|None = None
+    ):
+        self.__maestro:BotMaestroSDK|None = maestro
+        super().__init__(user=user, password=password, ambiente=ambiente)
     
     @SAPManipulation.start_SAP
     def get_empresas(self):
@@ -65,7 +70,14 @@ class SAP(SAPManipulation):
         
         if (tbar:=self.session.findById("wnd[0]/sbar/pane[0]").text):
             print(P(tbar))
-            Logs().register(status='Report', description=str(tbar))
+            if not self.__maestro is None:
+                self.__maestro.new_log_entry(
+                    activity_label="job_dda_br",
+                    values={
+                        "texto": str(tbar)
+                    }
+                )            
+
             return True
         else:
             print(P("Nenhum DDA alterado."))

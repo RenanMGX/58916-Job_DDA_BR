@@ -1,14 +1,26 @@
 from Entities.sap import SAP, datetime, relativedelta
 import os
 import pandas as pd
-from Entities.dependencies.arguments import Arguments
-from Entities.dependencies.functions import P, Functions
+from patrimar_dependencies.functions import P, Functions
+from botcity.maestro import *  # type: ignore
+from patrimar_dependencies.sharepointfolder import SharePointFolders
 
-class Execute:
+class ExecuteAPP:
     @staticmethod
-    def start():
+    def start(
+        *,
+        user:str,
+        password:str,
+        ambiente:str,
+        maestro:BotMaestroSDK|None = None
+    ):
         print(P("Iniciando execução do script..."))
-        sap = SAP()
+        sap = SAP(
+            user=user,
+            password=password,
+            ambiente=ambiente,
+            maestro=maestro
+        )
         path = sap.get_empresas()
         
         print(P("Lendo arquivo de empresas..."))
@@ -36,6 +48,17 @@ class Execute:
         print(P("Processamento concluído!"))
         
 if __name__ == "__main__":
-    Arguments({
-        "start": Execute.start
-    })
+    from patrimar_dependencies.credenciais import Credential
+    
+    crd:dict = Credential(
+        path_raiz=SharePointFolders(r'RPA - Dados\CRD\.patrimar_rpa\credenciais').value,
+        name_file="SAP_PRD"
+    ).load()
+    
+    
+    ExecuteAPP.start(
+        user=crd['user'],
+        password=crd['password'],
+        ambiente=crd['ambiente'],
+    )
+    

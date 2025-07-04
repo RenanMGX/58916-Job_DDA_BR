@@ -1,1 +1,0 @@
-PROJECT_NAME:str = "Job DDA_BR"
