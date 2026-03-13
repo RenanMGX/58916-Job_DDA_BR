@@ -21,7 +21,10 @@ class ExecuteAPP:
             ambiente=ambiente,
             maestro=maestro
         )
-        path = sap.get_empresas()
+        try:
+            path = sap.get_empresas()
+        finally:
+            sap.fechar_sap()
         
         print(P("Lendo arquivo de empresas..."))
         df = pd.read_excel(path)
@@ -40,7 +43,7 @@ class ExecuteAPP:
         cont = 1
         for empresa in lista_empresas:
             print(P(f"Processando empresa {empresa} de {cont}/{quantidade_empresas}"))
-            sap.dda_br(centro=empresa, date=(datetime.now() + relativedelta(days=1)))
+            sap.dda_br(centro=str(empresa), date=(datetime.now() + relativedelta(days=1)))
             cont += 1
             
         sap.fechar_sap()
