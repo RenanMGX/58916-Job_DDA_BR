@@ -6,6 +6,7 @@ from dateutil.relativedelta import relativedelta
 from time import sleep
 import os
 from botcity.maestro import * #type: ignore
+from typing import Any
 
 class SAP(SAPManipulation):
     def __init__(
@@ -19,6 +20,14 @@ class SAP(SAPManipulation):
         self.__maestro:BotMaestroSDK|None = maestro
         super().__init__(user=user, password=password, ambiente=ambiente)
     
+    def fechar_sap(self, *, all: bool = False) -> Any:
+        """Sobrescreve fechar_sap para ignorar quando a sessão nunca foi inicializada."""
+        try:
+            return super().fechar_sap(all=all)
+        except AttributeError as e:
+            if "_SAPManipulation__session" not in str(e):
+                raise
+
     @SAPManipulation.start_SAP
     def get_empresas(self):
         path = os.path.join(f"C:\\Users\\{os.getlogin()}\\Downloads", datetime.now().strftime("%Y%m%d%H%M%S_relatorio_empresas.xlsx"))

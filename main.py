@@ -1,9 +1,13 @@
 from Entities.sap import SAP, datetime, relativedelta
 import os
 import pandas as pd
+from time import sleep
 from patrimar_dependencies.functions import P, Functions
 from botcity.maestro import *  # type: ignore
 from patrimar_dependencies.sharepointfolder import SharePointFolders
+
+_SAP_MAX_RETRIES = 3
+_SAP_RETRY_DELAY = 15  # segundos entre tentativas
 
 class ExecuteAPP:
     @staticmethod
@@ -21,11 +25,24 @@ class ExecuteAPP:
             ambiente=ambiente,
             maestro=maestro
         )
+        path: str | None = None
         try:
-            path = sap.get_empresas()
+            for attempt in range(1, _SAP_MAX_RETRIES + 1):
+                try:
+                    path = sap.get_empresas()
+                    break
+                except (ConnectionError, AttributeError) as e:
+                    if attempt < _SAP_MAX_RETRIES:
+                        print(P(f"Tentativa {attempt}/{_SAP_MAX_RETRIES} de conexão ao SAP falhou: {e}. Aguardando {_SAP_RETRY_DELAY}s..."))
+                        sleep(_SAP_RETRY_DELAY)
+                    else:
+                        raise
         finally:
             sap.fechar_sap()
-        
+
+        if not path:
+            raise RuntimeError("get_empresas() não retornou um caminho de arquivo válido.")
+
         print(P("Lendo arquivo de empresas..."))
         df = pd.read_excel(path)
         lista_empresas = df['Empresa'].unique().tolist()
