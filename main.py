@@ -5,6 +5,7 @@ from time import sleep
 from patrimar_dependencies.functions import P, Functions
 from botcity.maestro import *  # type: ignore
 from patrimar_dependencies.sharepointfolder import SharePointFolders
+import pywintypes
 
 _SAP_MAX_RETRIES = 3
 _SAP_RETRY_DELAY = 15  # segundos entre tentativas
@@ -60,7 +61,17 @@ class ExecuteAPP:
         cont = 1
         for empresa in lista_empresas:
             print(P(f"Processando empresa {empresa} de {cont}/{quantidade_empresas}"))
-            sap.dda_br(centro=str(empresa), date=(datetime.now() + relativedelta(days=1)))
+            for attempt in range(1, _SAP_MAX_RETRIES + 1):
+                try:
+                    sap.dda_br(centro=str(empresa), date=(datetime.now() + relativedelta(days=1)))
+                    break
+                except pywintypes.com_error as e:
+                    if attempt < _SAP_MAX_RETRIES:
+                        print(P(f"Tentativa {attempt}/{_SAP_MAX_RETRIES} COM error em dda_br (empresa {empresa}): {e}. Reconectando em {_SAP_RETRY_DELAY}s..."))
+                        del sap.session  # descarta objeto COM obsoleto para forçar reconexão
+                        sleep(_SAP_RETRY_DELAY)
+                    else:
+                        raise
             cont += 1
             
         sap.fechar_sap()
